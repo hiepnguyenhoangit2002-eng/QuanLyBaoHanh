@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
+
 <meta charset="UTF-8">
 <title>Tra cứu bảo hành</title>
 
@@ -9,35 +9,81 @@
 
 body{
 font-family:Arial;
-padding:40px;
 background:#f4f6f8;
+padding:40px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+}
+
+h1{
+text-align:center;
+margin-bottom:30px;
+}
+
+.searchBox{
+display:flex;
+gap:10px;
+margin-bottom:20px;
 }
 
 input{
-padding:10px;
-width:300px;
+flex:1;
+padding:12px;
+border:1px solid #ccc;
+border-radius:6px;
+font-size:16px;
 }
 
 button{
-padding:10px;
+padding:12px 20px;
+border:none;
+background:#2c7be5;
+color:white;
+border-radius:6px;
+cursor:pointer;
+font-size:16px;
+}
+
+button:hover{
+background:#1a5ec8;
+}
+
+.addBtn{
+background:#28a745;
 }
 
 table{
-margin-top:20px;
 width:100%;
 border-collapse:collapse;
 background:white;
-}
-
-th,td{
-border:1px solid #ddd;
-padding:10px;
-text-align:center;
+border-radius:8px;
+overflow:hidden;
+box-shadow:0 3px 10px rgba(0,0,0,0.1);
 }
 
 th{
 background:#2c7be5;
 color:white;
+padding:12px;
+}
+
+td{
+padding:10px;
+border-bottom:1px solid #eee;
+text-align:center;
+}
+
+.status-ok{
+color:green;
+font-weight:bold;
+}
+
+.status-expired{
+color:red;
+font-weight:bold;
 }
 
 </style>
@@ -46,68 +92,145 @@ color:white;
 
 <body>
 
+<div class="container">
+
 <h1>Tra cứu bảo hành</h1>
 
+<div class="searchBox">
+
 <input id="searchInput" placeholder="Nhập SĐT / tên / mã đơn">
+
 <button onclick="search()">Tìm</button>
 
-<table id="table">
+<button class="addBtn" onclick="openForm()">Nhập dữ liệu</button>
+
+</div>
+
+<table>
 
 <thead>
+
 <tr>
+
 <th>Tên</th>
 <th>SĐT</th>
 <th>Mã đơn</th>
 <th>Sản phẩm</th>
 <th>Ngày mua</th>
-<th>Bảo hành</th>
+<th>Bảo hành đến</th>
+<th>Trạng thái</th>
+
 </tr>
+
 </thead>
 
-<tbody></tbody>
+<tbody id="tableBody">
+
+</tbody>
 
 </table>
+
+</div>
 
 <script>
 
 let data=[]
 
-fetch("https://opensheet.elk.sh/1mNui44f4fTX2raO5OlsbDVo9lrDnsYADMpwhq8YSmZY/Sheet1")
+fetch("https://opensheet.elk.sh/1mNui44f4fTX2raO5OlsbDVo9lrDnsYADMpwhq8YSmZY/Trang%20tính1")
 .then(res=>res.json())
 .then(res=>{
+
 data=res
+
+render(data)
+
 })
+
+function add24Months(date){
+
+let d=new Date(date)
+
+d.setMonth(d.getMonth()+24)
+
+return d
+
+}
+
+function formatDate(date){
+
+return date.toLocaleDateString("vi-VN")
+
+}
+
+function getStatus(warrantyDate){
+
+let today=new Date()
+
+if(today<=warrantyDate){
+
+return '<span class="status-ok">CÒN BẢO HÀNH</span>'
+
+}else{
+
+return '<span class="status-expired">HẾT BẢO HÀNH</span>'
+
+}
+
+}
+
+function render(list){
+
+let html=""
+
+list.forEach(i=>{
+
+let buyDate=new Date(i.buy)
+
+let warrantyDate=add24Months(buyDate)
+
+html+=`
+
+<tr>
+
+<td>${i.name}</td>
+<td>${i.phone}</td>
+<td>${i.order}</td>
+<td>${i.product}</td>
+<td>${formatDate(buyDate)}</td>
+<td>${formatDate(warrantyDate)}</td>
+<td>${getStatus(warrantyDate)}</td>
+
+</tr>
+
+`
+
+})
+
+document.getElementById("tableBody").innerHTML=html
+
+}
 
 function search(){
 
 let keyword=document.getElementById("searchInput").value.toLowerCase()
 
-let result=data.filter(item=>
+let result=data.filter(i=>
 
-item.name.toLowerCase().includes(keyword) ||
-item.phone.includes(keyword) ||
-item.order.toLowerCase().includes(keyword)
+i.name.toLowerCase().includes(keyword) ||
+
+i.phone.includes(keyword) ||
+
+i.order.toLowerCase().includes(keyword)
 
 )
 
-let html=""
+render(result)
 
-result.forEach(i=>{
+}
 
-html+=`
-<tr>
-<td>${i.name}</td>
-<td>${i.phone}</td>
-<td>${i.order}</td>
-<td>${i.product}</td>
-<td>${i.buy}</td>
-<td>${i.warranty}</td>
-</tr>
-`
+function openForm(){
 
-})
-
-document.querySelector("#table tbody").innerHTML=html
+window.open("LINK_GOOGLE_FORM","_blank")
 
 }
 
