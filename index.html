@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+<meta charset="UTF-8">
+<title>Tra cứu bảo hành</title>
+
+<style>
+
+body{
+font-family:Arial;
+padding:40px;
+background:#f4f6f8;
+}
+
+input{
+padding:10px;
+width:300px;
+}
+
+button{
+padding:10px;
+}
+
+table{
+margin-top:20px;
+width:100%;
+border-collapse:collapse;
+background:white;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:10px;
+text-align:center;
+}
+
+th{
+background:#2c7be5;
+color:white;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Tra cứu bảo hành</h1>
+
+<input id="searchInput" placeholder="Nhập SĐT / tên / mã đơn">
+<button onclick="search()">Tìm</button>
+
+<table id="table">
+
+<thead>
+<tr>
+<th>Tên</th>
+<th>SĐT</th>
+<th>Mã đơn</th>
+<th>Sản phẩm</th>
+<th>Ngày mua</th>
+<th>Bảo hành</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<script>
+
+let data=[]
+
+fetch("LINK_JSON_GOOGLE_SHEET")
+.then(res=>res.json())
+.then(res=>{
+data=res
+})
+
+function search(){
+
+let keyword=document.getElementById("searchInput").value.toLowerCase()
+
+let result=data.filter(item=>
+
+item.name.toLowerCase().includes(keyword) ||
+item.phone.includes(keyword) ||
+item.order.toLowerCase().includes(keyword)
+
+)
+
+let html=""
+
+result.forEach(i=>{
+
+html+=`
+<tr>
+<td>${i.name}</td>
+<td>${i.phone}</td>
+<td>${i.order}</td>
+<td>${i.product}</td>
+<td>${i.buy}</td>
+<td>${i.warranty}</td>
+</tr>
+`
+
+})
+
+document.querySelector("#table tbody").innerHTML=html
+
+}
+
+</script>
+
+</body>
+</html>
