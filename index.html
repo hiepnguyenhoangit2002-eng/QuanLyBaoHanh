@@ -1,314 +1,220 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-
 <meta charset="UTF-8">
 <title>Tra cứu bảo hành</title>
-
 <style>
+    body { font-family: Arial; background: #f4f6f8; padding: 40px; }
+    .container { max-width: 1100px; margin: auto; }
+    h1 { text-align: center; margin-bottom: 30px; }
+    
+    .searchBox { display: flex; gap: 10px; margin-bottom: 15px; }
+    input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+    button { padding: 12px 20px; border: none; background: #2c7be5; color: white; border-radius: 6px; cursor: pointer; font-size: 16px; }
+    button: hover { background: #1a5ec8; }
 
-body{
-font-family:Arial;
-background:#f4f6f8;
-padding:40px;
-}
+    /* CSS mới cho phần Lọc và Sắp xếp */
+    .filterBox { display: flex; gap: 10px; margin-bottom: 30px; justify-content: flex-end; }
+    .filterBox select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; outline: none; background: white; cursor: pointer;}
 
-.container{
-max-width:1100px;
-margin:auto;
-}
-
-h1{
-text-align:center;
-margin-bottom:30px;
-}
-
-.searchBox{
-display:flex;
-gap:10px;
-margin-bottom:30px;
-}
-
-input{
-flex:1;
-padding:12px;
-border:1px solid #ccc;
-border-radius:6px;
-font-size:16px;
-}
-
-button{
-padding:12px 20px;
-border:none;
-background:#2c7be5;
-color:white;
-border-radius:6px;
-cursor:pointer;
-font-size:16px;
-}
-
-button:hover{
-background:#1a5ec8;
-}
-
-table{
-margin-top:20px;
-width:100%;
-border-collapse:collapse;
-background:white;
-border-radius:10px;
-overflow:hidden;
-box-shadow:0 3px 10px rgba(0,0,0,0.1);
-}
-
-th{
-background:#2c7be5;
-color:white;
-padding:12px;
-}
-
-td{
-padding:10px;
-border-bottom:1px solid #eee;
-text-align:center;
-}
-
-.status-ok{
-color:green;
-font-weight:bold;
-}
-
-.status-expired{
-color:red;
-font-weight:bold;
-}
-
-.addBox{
-margin-top:40px;
-background:white;
-padding:20px;
-border-radius:10px;
-box-shadow:0 3px 10px rgba(0,0,0,0.1);
-}
-
-.formRow{
-display:flex;
-gap:10px;
-margin-bottom:10px;
-}
-
-.formRow input{
-flex:1;
-}
-
-.saveBtn{
-background:#28a745;
-width:100%;
-}
-
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+    th { background: #2c7be5; color: white; padding: 12px; }
+    td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+    
+    .status-ok { color: green; font-weight: bold; }
+    .status-expired { color: red; font-weight: bold; }
+    
+    .addBox { margin-top: 40px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+    .formRow { display: flex; gap: 10px; margin-bottom: 10px; }
+    .formRow input { flex: 1; }
+    .saveBtn { background: #28a745; width: 100%; margin-top: 10px; }
 </style>
-
 </head>
-
 <body>
 
 <div class="container">
+    <h1>Tra cứu bảo hành</h1>
 
-<h1>Tra cứu bảo hành</h1>
+    <div class="searchBox">
+        <input id="searchInput" placeholder="Nhập SĐT / tên / mã đơn">
+        <button onclick="search()">Tìm</button>
+    </div>
 
-<div class="searchBox">
+    <div class="filterBox">
+        <select id="filterStatus" onchange="applyFiltersAndSort()">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="ok">Còn bảo hành</option>
+            <option value="expired">Hết bảo hành</option>
+        </select>
+        
+        <select id="sortDate" onchange="applyFiltersAndSort()">
+            <option value="desc">Ngày mua: Mới nhất trước</option>
+            <option value="asc">Ngày mua: Cũ nhất trước</option>
+        </select>
+    </div>
 
-<input id="searchInput" placeholder="Nhập SĐT / tên / mã đơn">
+    <table>
+        <thead>
+            <tr>
+                <th>Tên</th>
+                <th>SĐT</th>
+                <th>Mã đơn</th>
+                <th>Sản phẩm</th>
+                <th>Ngày mua</th>
+                <th>Bảo hành đến</th>
+                <th>Trạng thái</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <tr><td colspan="7">Nhập thông tin để tra cứu bảo hành</td></tr>
+        </tbody>
+    </table>
 
-<button onclick="search()">Tìm</button>
-
-</div>
-
-<table>
-
-<thead>
-
-<tr>
-<th>Tên</th>
-<th>SĐT</th>
-<th>Mã đơn</th>
-<th>Sản phẩm</th>
-<th>Ngày mua</th>
-<th>Bảo hành đến</th>
-<th>Trạng thái</th>
-</tr>
-
-</thead>
-
-<tbody id="tableBody">
-
-<tr>
-<td colspan="7">Nhập thông tin để tra cứu bảo hành</td>
-</tr>
-
-</tbody>
-
-</table>
-
-
-<div class="addBox">
-
-<h2>Nhập dữ liệu bảo hành</h2>
-
-<div class="formRow">
-<input id="name" placeholder="Tên khách">
-<input id="phone" placeholder="SĐT">
-</div>
-
-<div class="formRow">
-<input id="order" placeholder="Mã đơn">
-<input id="product" placeholder="Sản phẩm">
-</div>
-
-<div class="formRow">
-<input id="buy" type="date">
-</div>
-
-<button class="saveBtn" onclick="saveData()">Lưu dữ liệu</button>
-
-</div>
-
+    <div class="addBox">
+        <h2>Nhập dữ liệu bảo hành</h2>
+        <div class="formRow">
+            <input id="name" placeholder="Tên khách">
+            <input id="phone" placeholder="SĐT">
+        </div>
+        <div class="formRow">
+            <input id="order" placeholder="Mã đơn">
+            <input id="product" placeholder="Sản phẩm">
+        </div>
+        <div class="formRow">
+            <input id="buy" type="date">
+        </div>
+        <button class="saveBtn" onclick="saveData()">Lưu dữ liệu</button>
+    </div>
 </div>
 
 <script>
+let data = [];
+let currentSearchResults = []; // Biến mới để lưu tạm kết quả tìm kiếm
 
-let data=[]
-
-document.getElementById("searchInput").addEventListener("keypress",function(e){
-if(e.key==="Enter"){
-search()
-}
+document.getElementById("searchInput").addEventListener("keypress", function(e){
+    if(e.key === "Enter") search();
 })
 
 fetch("https://opensheet.elk.sh/1mNui44f4fTX2raO5OlsbDVo9lrDnsYADMpwhq8YSmZY/Sheet1")
-.then(res=>res.json())
-.then(res=>{
-data=res
-})
+    .then(res => res.json())
+    .then(res => { data = res; })
 
 function add24Months(date){
-
-let d=new Date(date)
-d.setMonth(d.getMonth()+24)
-
-return d
-
+    let d = new Date(date);
+    d.setMonth(d.getMonth() + 24);
+    return d;
 }
 
 function formatDate(date){
-
-return date.toLocaleDateString("vi-VN")
-
+    return date.toLocaleDateString("vi-VN");
 }
 
 function getStatus(warrantyDate){
-
-let today=new Date()
-
-if(today<=warrantyDate){
-return '<span class="status-ok">CÒN BẢO HÀNH</span>'
-}else{
-return '<span class="status-expired">HẾT BẢO HÀNH</span>'
-}
-
+    let today = new Date();
+    if(today <= warrantyDate){
+        return '<span class="status-ok">CÒN BẢO HÀNH</span>';
+    } else {
+        return '<span class="status-expired">HẾT BẢO HÀNH</span>';
+    }
 }
 
 function render(list){
+    let html = "";
+    list.forEach(i => {
+        let buyDate = new Date(i.buy);
+        let warrantyDate = add24Months(buyDate);
+        html += `
+            <tr>
+                <td>${i.name || ""}</td>
+                <td>${i.phone || ""}</td>
+                <td>${i.order || ""}</td>
+                <td>${i.product || ""}</td>
+                <td>${formatDate(buyDate)}</td>
+                <td>${formatDate(warrantyDate)}</td>
+                <td>${getStatus(warrantyDate)}</td>
+            </tr>
+        `;
+    });
 
-let html=""
-
-list.forEach(i=>{
-
-let buyDate=new Date(i.buy)
-let warrantyDate=add24Months(buyDate)
-
-html+=`
-
-<tr>
-
-<td>${i.name || ""}</td>
-<td>${i.phone || ""}</td>
-<td>${i.order || ""}</td>
-<td>${i.product || ""}</td>
-<td>${formatDate(buyDate)}</td>
-<td>${formatDate(warrantyDate)}</td>
-<td>${getStatus(warrantyDate)}</td>
-
-</tr>
-
-`
-
-})
-
-if(list.length===0){
-html=`<tr><td colspan="7">Không tìm thấy dữ liệu</td></tr>`
-}
-
-document.getElementById("tableBody").innerHTML=html
-
+    if(list.length === 0){
+        html = `<tr><td colspan="7">Không tìm thấy dữ liệu phù hợp</td></tr>`;
+    }
+    document.getElementById("tableBody").innerHTML = html;
 }
 
 function search(){
+    let keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+    
+    if(!keyword){
+        document.getElementById("tableBody").innerHTML = `<tr><td colspan="7">Vui lòng nhập thông tin cần tìm</td></tr>`;
+        currentSearchResults = [];
+        return;
+    }
 
-let keyword=document.getElementById("searchInput").value.trim().toLowerCase()
+    // Tìm kiếm cơ bản và lưu vào biến toàn cục
+    currentSearchResults = data.filter(i => {
+        let name = (i.name || "").toLowerCase();
+        let phone = (i.phone || "");
+        let order = (i.order || "").toLowerCase();
+        return name.includes(keyword) || phone.includes(keyword) || order.includes(keyword);
+    });
 
-if(!keyword){
-
-document.getElementById("tableBody").innerHTML=
-`<tr><td colspan="7">Vui lòng nhập thông tin cần tìm</td></tr>`
-
-return
-
+    // Sau khi tìm xong, gọi hàm lọc và sắp xếp để hiển thị
+    applyFiltersAndSort();
 }
 
-let result=data.filter(i=>{
+// HÀM MỚI: Xử lý Lọc và Sắp xếp
+function applyFiltersAndSort() {
+    let statusFilter = document.getElementById("filterStatus").value;
+    let sortOrder = document.getElementById("sortDate").value;
 
-let name=(i.name || "").toLowerCase()
-let phone=(i.phone || "")
-let order=(i.order || "").toLowerCase()
+    // Tạo bản sao của mảng kết quả để không làm hỏng dữ liệu gốc
+    let processedData = [...currentSearchResults];
 
-return name.includes(keyword) || phone.includes(keyword) || order.includes(keyword)
+    // 1. Thực hiện Lọc (Filter)
+    if (statusFilter !== "all") {
+        let today = new Date();
+        processedData = processedData.filter(i => {
+            let buyDate = new Date(i.buy);
+            let warrantyDate = add24Months(buyDate);
+            let isOk = today <= warrantyDate; // true nếu còn hạn
+            
+            return statusFilter === "ok" ? isOk : !isOk;
+        });
+    }
 
-})
+    // 2. Thực hiện Sắp xếp (Sort) theo ngày mua
+    processedData.sort((a, b) => {
+        let dateA = new Date(a.buy).getTime();
+        let dateB = new Date(b.buy).getTime();
+        
+        // desc: Giảm dần (Mới nhất trước), asc: Tăng dần (Cũ nhất trước)
+        return sortOrder === "desc" ? (dateB - dateA) : (dateA - dateB);
+    });
 
-render(result)
-
+    // 3. Render ra màn hình
+    render(processedData);
 }
 
 function saveData(){
+    let dataSend = {
+        name: document.getElementById("name").value,
+        phone: document.getElementById("phone").value,
+        order: document.getElementById("order").value,
+        product: document.getElementById("product").value,
+        buy: document.getElementById("buy").value
+    };
 
-let dataSend={
-
-name:document.getElementById("name").value,
-phone:document.getElementById("phone").value,
-order:document.getElementById("order").value,
-product:document.getElementById("product").value,
-buy:document.getElementById("buy").value
-
+    fetch("https://script.google.com/macros/s/AKfycbzTaFrikrAr2J6f1rvJPmB9IDIZhRHnwdwJpaki9YD3hCFENnW1rsXicZPCA1-_3xe9JA/exec", {
+        method: "POST",
+        body: JSON.stringify(dataSend)
+    })
+    .then(res => res.text())
+    .then(res => {
+        alert("Đã lưu dữ liệu");
+        location.reload();
+    });
 }
-
-fetch("https://script.google.com/macros/s/AKfycbzTaFrikrAr2J6f1rvJPmB9IDIZhRHnwdwJpaki9YD3hCFENnW1rsXicZPCA1-_3xe9JA/exec",{
-
-method:"POST",
-body:JSON.stringify(dataSend)
-
-})
-.then(res=>res.text())
-.then(res=>{
-
-alert("Đã lưu dữ liệu")
-
-location.reload()
-
-})
-
-}
-
 </script>
 
 </body>
