@@ -11,9 +11,8 @@
     .searchBox { display: flex; gap: 10px; margin-bottom: 15px; }
     input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
     button { padding: 12px 20px; border: none; background: #2c7be5; color: white; border-radius: 6px; cursor: pointer; font-size: 16px; }
-    button: hover { background: #1a5ec8; }
+    button:hover { background: #1a5ec8; }
 
-    /* CSS mới cho phần Lọc và Sắp xếp */
     .filterBox { display: flex; gap: 10px; margin-bottom: 30px; justify-content: flex-end; }
     .filterBox select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; outline: none; background: white; cursor: pointer;}
 
@@ -27,7 +26,14 @@
     .addBox { margin-top: 40px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
     .formRow { display: flex; gap: 10px; margin-bottom: 10px; }
     .formRow input { flex: 1; }
-    .saveBtn { background: #28a745; width: 100%; margin-top: 10px; }
+    .saveBtn { background: #28a745; width: 100%; margin-top: 10px; font-weight: bold; }
+    
+    /* CSS Mới cho phần Paste Excel */
+    .excelBox { background: #fff3cd; border: 1px solid #ffeeba; }
+    textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; resize: vertical; box-sizing: border-box; }
+    .bulkSaveBtn { background: #ffc107; color: #333; }
+    .bulkSaveBtn:hover { background: #e0a800; }
+    #bulkStatus { margin-top: 10px; font-weight: bold; color: #d39e00; text-align: center; }
 </style>
 </head>
 <body>
@@ -66,12 +72,26 @@
             </tr>
         </thead>
         <tbody id="tableBody">
-            <tr><td colspan="7">Nhập thông tin để tra cứu bảo hành</td></tr>
+            <tr><td colspan="7">Đang tải dữ liệu...</td></tr>
         </tbody>
     </table>
 
+    <div class="addBox excelBox">
+        <h2>📑 Nhập hàng loạt từ Excel (Copy & Paste)</h2>
+        <p style="font-size: 14px; color: #666;">Copy bảng từ Excel gồm 4 cột: <b>Tên - SĐT - Mã đơn - Sản phẩm</b> và dán vào ô bên dưới.</p>
+        
+        <div class="formRow">
+            <span style="line-height: 40px; font-weight: bold;">Ngày mua chung: </span>
+            <input id="bulkBuyDate" type="date" title="Ngày mua áp dụng cho tất cả các đơn được dán">
+        </div>
+        
+        <textarea id="excelData" rows="6" placeholder="Dán (Ctrl+V) dữ liệu từ Excel vào đây..."></textarea>
+        <button class="saveBtn bulkSaveBtn" onclick="processAndSaveExcel()">Lưu hàng loạt lên Google Sheet</button>
+        <div id="bulkStatus"></div>
+    </div>
+
     <div class="addBox">
-        <h2>Nhập dữ liệu bảo hành</h2>
+        <h2>Nhập dữ liệu bảo hành (Thủ công từng đơn)</h2>
         <div class="formRow">
             <input id="name" placeholder="Tên khách">
             <input id="phone" placeholder="SĐT">
@@ -89,15 +109,24 @@
 
 <script>
 let data = [];
-let currentSearchResults = []; // Biến mới để lưu tạm kết quả tìm kiếm
+let currentSearchResults = [];
 
 document.getElementById("searchInput").addEventListener("keypress", function(e){
     if(e.key === "Enter") search();
 })
 
+// Tự động set ngày hôm nay cho ô nhập liệu
+let todayStr = new Date().toISOString().split('T')[0];
+document.getElementById('buy').value = todayStr;
+document.getElementById('bulkBuyDate').value = todayStr;
+
 fetch("https://opensheet.elk.sh/1mNui44f4fTX2raO5OlsbDVo9lrDnsYADMpwhq8YSmZY/Sheet1")
     .then(res => res.json())
-    .then(res => { data = res; })
+    .then(res => { 
+        data = res; 
+        currentSearchResults = [...data];
+        applyFiltersAndSort(); // Hiển thị tất cả dữ liệu khi vừa load xong
+    });
 
 function add24Months(date){
     let d = new Date(date);
@@ -106,7 +135,11 @@ function add24Months(date){
 }
 
 function formatDate(date){
-    return date.toLocaleDateString("vi-VN");
+    if (isNaN(date.getTime())) return "";
+    let day = date.getDate().toString().padStart(2, '0');
+    let month = (date.getMonth() + 1).toString().padStart(2, '0');
+    let year = date.getFullYear();
+    return `${day}/${month}/${year}`;
 }
 
 function getStatus(warrantyDate){
@@ -146,56 +179,44 @@ function search(){
     let keyword = document.getElementById("searchInput").value.trim().toLowerCase();
     
     if(!keyword){
-        document.getElementById("tableBody").innerHTML = `<tr><td colspan="7">Vui lòng nhập thông tin cần tìm</td></tr>`;
-        currentSearchResults = [];
-        return;
+        currentSearchResults = [...data];
+    } else {
+        currentSearchResults = data.filter(i => {
+            let name = (i.name || "").toLowerCase();
+            let phone = (i.phone || "");
+            let order = (i.order || "").toLowerCase();
+            return name.includes(keyword) || phone.includes(keyword) || order.includes(keyword);
+        });
     }
-
-    // Tìm kiếm cơ bản và lưu vào biến toàn cục
-    currentSearchResults = data.filter(i => {
-        let name = (i.name || "").toLowerCase();
-        let phone = (i.phone || "");
-        let order = (i.order || "").toLowerCase();
-        return name.includes(keyword) || phone.includes(keyword) || order.includes(keyword);
-    });
-
-    // Sau khi tìm xong, gọi hàm lọc và sắp xếp để hiển thị
     applyFiltersAndSort();
 }
 
-// HÀM MỚI: Xử lý Lọc và Sắp xếp
 function applyFiltersAndSort() {
     let statusFilter = document.getElementById("filterStatus").value;
     let sortOrder = document.getElementById("sortDate").value;
 
-    // Tạo bản sao của mảng kết quả để không làm hỏng dữ liệu gốc
     let processedData = [...currentSearchResults];
 
-    // 1. Thực hiện Lọc (Filter)
     if (statusFilter !== "all") {
         let today = new Date();
         processedData = processedData.filter(i => {
             let buyDate = new Date(i.buy);
             let warrantyDate = add24Months(buyDate);
-            let isOk = today <= warrantyDate; // true nếu còn hạn
-            
+            let isOk = today <= warrantyDate; 
             return statusFilter === "ok" ? isOk : !isOk;
         });
     }
 
-    // 2. Thực hiện Sắp xếp (Sort) theo ngày mua
     processedData.sort((a, b) => {
-        let dateA = new Date(a.buy).getTime();
-        let dateB = new Date(b.buy).getTime();
-        
-        // desc: Giảm dần (Mới nhất trước), asc: Tăng dần (Cũ nhất trước)
+        let dateA = new Date(a.buy).getTime() || 0;
+        let dateB = new Date(b.buy).getTime() || 0;
         return sortOrder === "desc" ? (dateB - dateA) : (dateA - dateB);
     });
 
-    // 3. Render ra màn hình
     render(processedData);
 }
 
+// Hàm lưu từng dòng (cũ)
 function saveData(){
     let dataSend = {
         name: document.getElementById("name").value,
@@ -214,6 +235,71 @@ function saveData(){
         alert("Đã lưu dữ liệu");
         location.reload();
     });
+}
+
+// HÀM MỚI: Xử lý và lưu hàng loạt từ file Excel
+async function processAndSaveExcel() {
+    let rawData = document.getElementById("excelData").value;
+    let bulkDate = document.getElementById("bulkBuyDate").value;
+    let statusDiv = document.getElementById("bulkStatus");
+
+    if (!rawData.trim()) {
+        alert("Vui lòng dán dữ liệu từ file Excel vào ô văn bản!");
+        return;
+    }
+
+    // Tách dòng bằng \n
+    let rows = rawData.split('\n');
+    let dataToSave = [];
+
+    for (let i = 0; i < rows.length; i++) {
+        let row = rows[i].trim();
+        if (!row) continue; // Bỏ qua dòng trống
+
+        // Tách cột bằng phím Tab (\t)
+        let cols = row.split('\t'); 
+        
+        let name = cols[0] ? cols[0].trim() : "";
+        let phone = cols[1] ? cols[1].trim() : "";
+        let order = cols[2] ? cols[2].trim() : "";
+        let product = cols[3] ? cols[3].trim() : "";
+        
+        // Chỉ lấy những dòng có Tên hoặc SĐT để tránh lấy nhầm rác
+        if(name !== "" || phone !== "") {
+            dataToSave.push({ name, phone, order, product, buy: bulkDate });
+        }
+    }
+
+    if (dataToSave.length === 0) {
+        alert("Không tìm thấy dữ liệu hợp lệ. Hãy chắc chắn bạn đã copy đúng bảng.");
+        return;
+    }
+
+    if (!confirm(`Hệ thống tìm thấy ${dataToSave.length} đơn hàng. Bạn có chắc chắn muốn lưu tất cả lên Google Sheet không?`)) {
+        return;
+    }
+
+    let url = "https://script.google.com/macros/s/AKfycbzTaFrikrAr2J6f1rvJPmB9IDIZhRHnwdwJpaki9YD3hCFENnW1rsXicZPCA1-_3xe9JA/exec";
+    
+    // Gửi dữ liệu tuần tự từng dòng một (Để tránh phải sửa đổi code Google Apps Script của bạn)
+    for (let i = 0; i < dataToSave.length; i++) {
+        statusDiv.innerText = `⏳ Đang lưu đơn thứ ${i + 1} / ${dataToSave.length}... Vui lòng không tắt trang!`;
+        try {
+            await fetch(url, {
+                method: "POST",
+                body: JSON.stringify(dataToSave[i])
+            });
+        } catch (error) {
+            console.error("Lỗi ở dòng " + (i+1), error);
+        }
+    }
+
+    statusDiv.style.color = "green";
+    statusDiv.innerText = `✅ Đã lưu thành công ${dataToSave.length} đơn hàng! Đang tải lại trang...`;
+    
+    setTimeout(() => {
+        location.reload();
+    }, 1500);
 }
 </script>
 
