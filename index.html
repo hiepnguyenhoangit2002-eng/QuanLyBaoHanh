@@ -2,48 +2,76 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Tra cứu bảo hành</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Tra cứu bảo hành</title>
 <style>
-    body { font-family: Arial; background: #f4f6f8; padding: 40px; }
+    body { font-family: Arial, sans-serif; background: #f4f6f8; padding: 20px; margin: 0; }
     .container { max-width: 1100px; margin: auto; }
-    h1 { text-align: center; margin-bottom: 30px; }
+    h1 { text-align: center; margin-bottom: 20px; color: #333; }
     
     .searchBox { display: flex; gap: 10px; margin-bottom: 15px; }
-    input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
-    button { padding: 12px 20px; border: none; background: #2c7be5; color: white; border-radius: 6px; cursor: pointer; font-size: 16px; }
-    button:hover { background: #1a5ec8; }
+    input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; transition: border 0.3s; }
+    input:focus { border-color: #2c7be5; outline: none; }
+    button { padding: 12px 20px; border: none; background: #2c7be5; color: white; border-radius: 6px; cursor: pointer; font-size: 16px; transition: background 0.3s, opacity 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;}
+    button:hover:not(:disabled) { background: #1a5ec8; }
+    button:disabled { background: #6c757d; cursor: not-allowed; opacity: 0.7; }
 
-    .filterBox { display: flex; gap: 10px; margin-bottom: 30px; justify-content: flex-end; }
-    .filterBox select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; outline: none; background: white; cursor: pointer;}
+    .filterBox { display: flex; gap: 10px; margin-bottom: 20px; justify-content: flex-end; flex-wrap: wrap; }
+    .filterBox select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; outline: none; background: white; cursor: pointer; }
 
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
-    th { background: #2c7be5; color: white; padding: 12px; }
-    td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+    /* Tối ưu bảng cho Mobile */
+    .table-responsive { width: 100%; overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; min-width: 800px; /* Đảm bảo bảng không bị bóp méo quá mức trên mobile */ }
+    th { background: #2c7be5; color: white; padding: 12px; white-space: nowrap; }
+    td { padding: 12px 10px; border-bottom: 1px solid #eee; text-align: center; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background-color: #f8f9fa; }
     
-    .status-ok { color: green; font-weight: bold; }
-    .status-expired { color: red; font-weight: bold; }
+    .status-ok { color: #28a745; font-weight: bold; background: #e6f4ea; padding: 4px 8px; border-radius: 4px; display: inline-block;}
+    .status-expired { color: #dc3545; font-weight: bold; background: #fce8e6; padding: 4px 8px; border-radius: 4px; display: inline-block;}
     
-    .addBox { margin-top: 40px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
-    .formRow { display: flex; gap: 10px; margin-bottom: 10px; }
-    .formRow input { flex: 1; }
+    .addBox { margin-top: 30px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+    .addBox h2 { margin-top: 0; font-size: 18px; color: #444; margin-bottom: 15px; }
+    .formRow { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+    .formRow input { flex: 1; min-width: 200px; }
     .saveBtn { background: #28a745; width: 100%; margin-top: 10px; font-weight: bold; }
+    .saveBtn:hover:not(:disabled) { background: #218838; }
     
-    /* CSS cho phần Paste Excel */
-    .excelBox { background: #fff3cd; border: 1px solid #ffeeba; }
-    textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; resize: vertical; box-sizing: border-box; }
+    .excelBox { background: #fff8e1; border: 1px solid #ffeeba; }
+    textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; resize: vertical; box-sizing: border-box; font-family: monospace; }
     .bulkSaveBtn { background: #ffc107; color: #333; }
-    .bulkSaveBtn:hover { background: #e0a800; }
-    #bulkStatus { margin-top: 10px; font-weight: bold; color: #d39e00; text-align: center; }
+    .bulkSaveBtn:hover:not(:disabled) { background: #e0a800; }
+    #bulkStatus { margin-top: 10px; font-weight: bold; color: #d39e00; text-align: center; font-size: 14px; min-height: 20px;}
+
+    /* Hiệu ứng Loading Spinner */
+    .spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid white; width: 18px; height: 18px; animation: spin 1s linear infinite; display: none; }
+    .spinner.active { display: inline-block; }
+    .spinner.dark { border: 3px solid rgba(0,0,0,0.1); border-top: 3px solid #333; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* CSS cho Toast Notification */
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast { padding: 15px 20px; border-radius: 6px; color: white; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateX(100%); transition: all 0.3s ease; display: flex; align-items: center; gap: 10px; min-width: 250px; }
+    .toast.show { opacity: 1; transform: translateX(0); }
+    .toast.success { background: #28a745; }
+    .toast.error { background: #dc3545; }
+    .toast.warning { background: #ffc107; color: #333; }
+    
+    @media (max-width: 600px) {
+        body { padding: 10px; }
+        .searchBox { flex-direction: column; }
+    }
 </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Tra cứu bảo hành</h1>
+    <h1>Tra cứu bảo hành V-LED</h1>
 
     <div class="searchBox">
         <input id="searchInput" placeholder="Nhập SĐT / tên / mã đơn">
-        <button onclick="search()">Tìm</button>
+        <button onclick="search()" id="searchBtn">
+            <span class="spinner" id="searchSpinner"></span> Tìm kiếm
+        </button>
     </div>
 
     <div class="filterBox">
@@ -59,39 +87,43 @@
         </select>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Tên</th>
-                <th>SĐT</th>
-                <th>Mã đơn</th>
-                <th>Sản phẩm</th>
-                <th>Ngày mua</th>
-                <th>Bảo hành đến</th>
-                <th>Trạng thái</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-            <tr><td colspan="7">Nhập thông tin để tra cứu bảo hành</td></tr>
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tên</th>
+                    <th>SĐT</th>
+                    <th>Mã đơn</th>
+                    <th>Sản phẩm</th>
+                    <th>Ngày mua</th>
+                    <th>Bảo hành đến</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="7">Đang tải dữ liệu từ hệ thống...</td></tr>
+            </tbody>
+        </table>
+    </div>
 
     <div class="addBox excelBox">
         <h2>📑 Nhập hàng loạt từ Excel (Copy & Paste)</h2>
-        <p style="font-size: 14px; color: #666;">Copy bảng từ Excel gồm 4 cột: <b>Tên - SĐT - Mã đơn - Sản phẩm</b> và dán vào ô bên dưới.</p>
+        <p style="font-size: 13px; color: #666; margin-top: 0;">Copy bảng gồm 4 cột: <b>Tên - SĐT - Mã đơn - Sản phẩm</b> và dán vào ô bên dưới.</p>
         
-        <div class="formRow">
-            <span style="line-height: 40px; font-weight: bold;">Ngày mua chung: </span>
-            <input id="bulkBuyDate" type="date" title="Ngày mua áp dụng cho tất cả các đơn được dán">
+        <div class="formRow" style="align-items: center;">
+            <span style="font-weight: bold; font-size: 14px;">Ngày mua chung: </span>
+            <input id="bulkBuyDate" type="date">
         </div>
         
-        <textarea id="excelData" rows="6" placeholder="Dán (Ctrl+V) dữ liệu từ Excel vào đây..."></textarea>
-        <button class="saveBtn bulkSaveBtn" onclick="processAndSaveExcel()">Lưu hàng loạt lên Google Sheet</button>
+        <textarea id="excelData" rows="5" placeholder="Dán (Ctrl+V) dữ liệu vào đây..."></textarea>
+        <button class="saveBtn bulkSaveBtn" id="btnBulkSave" onclick="processAndSaveExcel()">
+            <span class="spinner dark" id="bulkSpinner"></span> Lưu hàng loạt
+        </button>
         <div id="bulkStatus"></div>
     </div>
 
     <div class="addBox">
-        <h2>Nhập dữ liệu bảo hành (Thủ công từng đơn)</h2>
+        <h2>➕ Nhập dữ liệu thủ công từng đơn</h2>
         <div class="formRow">
             <input id="name" placeholder="Tên khách">
             <input id="phone" placeholder="SĐT">
@@ -103,9 +135,13 @@
         <div class="formRow">
             <input id="buy" type="date">
         </div>
-        <button class="saveBtn" onclick="saveData()">Lưu dữ liệu</button>
+        <button class="saveBtn" id="btnSingleSave" onclick="saveData()">
+            <span class="spinner" id="singleSpinner"></span> Lưu dữ liệu
+        </button>
     </div>
 </div>
+
+<div id="toastContainer" class="toast-container"></div>
 
 <script>
 let data = [];
@@ -115,18 +151,43 @@ document.getElementById("searchInput").addEventListener("keypress", function(e){
     if(e.key === "Enter") search();
 })
 
-// Tự động set ngày hôm nay cho ô nhập liệu
 let todayStr = new Date().toISOString().split('T')[0];
 document.getElementById('buy').value = todayStr;
 document.getElementById('bulkBuyDate').value = todayStr;
 
+// Fetch dữ liệu ban đầu
 fetch("https://opensheet.elk.sh/1mNui44f4fTX2raO5OlsbDVo9lrDnsYADMpwhq8YSmZY/Sheet1")
     .then(res => res.json())
     .then(res => { 
         data = res; 
-        // Khi tải xong data ngầm, không render ra bảng nữa mà giữ nguyên dòng nhắc nhở
-        document.getElementById("tableBody").innerHTML = `<tr><td colspan="7">Nhập thông tin để tra cứu bảo hành</td></tr>`;
+        document.getElementById("tableBody").innerHTML = `<tr><td colspan="7" style="color: #666;">Hệ thống đã sẵn sàng. Vui lòng nhập thông tin để tra cứu.</td></tr>`;
+    })
+    .catch(err => {
+        document.getElementById("tableBody").innerHTML = `<tr><td colspan="7" style="color: red;">Lỗi tải dữ liệu. Vui lòng tải lại trang.</td></tr>`;
+        showToast("Không thể kết nối đến máy chủ dữ liệu!", "error");
     });
+
+// HÀM HIỂN THỊ THÔNG BÁO TOAST
+function showToast(message, type = "success") {
+    const container = document.getElementById("toastContainer");
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    
+    // Icon tùy theo loại thông báo
+    let icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
+    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    
+    container.appendChild(toast);
+
+    // Kích hoạt animation hiện ra
+    setTimeout(() => toast.classList.add("show"), 10);
+
+    // Tự động ẩn và xóa sau 3.5 giây
+    setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
+}
 
 function add24Months(date){
     let d = new Date(date);
@@ -144,6 +205,7 @@ function formatDate(date){
 
 function getStatus(warrantyDate){
     let today = new Date();
+    today.setHours(0,0,0,0); // Reset giờ để so sánh ngày chính xác
     if(today <= warrantyDate){
         return '<span class="status-ok">CÒN BẢO HÀNH</span>';
     } else {
@@ -160,7 +222,7 @@ function render(list){
             <tr>
                 <td>${i.name || ""}</td>
                 <td>${i.phone || ""}</td>
-                <td>${i.order || ""}</td>
+                <td><strong>${i.order || ""}</strong></td>
                 <td>${i.product || ""}</td>
                 <td>${formatDate(buyDate)}</td>
                 <td>${formatDate(warrantyDate)}</td>
@@ -170,7 +232,7 @@ function render(list){
     });
 
     if(list.length === 0){
-        html = `<tr><td colspan="7">Không tìm thấy dữ liệu phù hợp</td></tr>`;
+        html = `<tr><td colspan="7" style="color: #dc3545;">Không tìm thấy kết quả nào phù hợp</td></tr>`;
     }
     document.getElementById("tableBody").innerHTML = html;
 }
@@ -179,24 +241,35 @@ function search(){
     let keyword = document.getElementById("searchInput").value.trim().toLowerCase();
     
     if(!keyword){
-        // Nếu không có từ khóa thì dọn sạch kết quả cũ và hiện thông báo
-        document.getElementById("tableBody").innerHTML = `<tr><td colspan="7">Vui lòng nhập thông tin cần tìm</td></tr>`;
+        document.getElementById("tableBody").innerHTML = `<tr><td colspan="7" style="color: #666;">Vui lòng nhập số điện thoại, tên hoặc mã đơn để tìm</td></tr>`;
         currentSearchResults = [];
         return; 
     } 
 
-    currentSearchResults = data.filter(i => {
-        let name = (i.name || "").toLowerCase();
-        let phone = (i.phone || "");
-        let order = (i.order || "").toLowerCase();
-        return name.includes(keyword) || phone.includes(keyword) || order.includes(keyword);
-    });
-    
-    applyFiltersAndSort();
+    // Bật hiệu ứng loading cho nút tìm
+    let btn = document.getElementById("searchBtn");
+    let spinner = document.getElementById("searchSpinner");
+    btn.disabled = true;
+    spinner.classList.add("active");
+
+    // Lọc dữ liệu
+    setTimeout(() => {
+        currentSearchResults = data.filter(i => {
+            let name = (i.name || "").toLowerCase();
+            let phone = (i.phone || "");
+            let order = (i.order || "").toLowerCase();
+            return name.includes(keyword) || phone.includes(keyword) || order.includes(keyword);
+        });
+        
+        applyFiltersAndSort();
+
+        // Tắt hiệu ứng loading
+        btn.disabled = false;
+        spinner.classList.remove("active");
+    }, 200); // Giả lập độ trễ nhỏ để thấy spinner, tạo cảm giác app đang xử lý
 }
 
 function applyFiltersAndSort() {
-    // Nếu chưa có kết quả tìm kiếm nào (người dùng chưa bấm tìm), thì không làm gì cả
     if(currentSearchResults.length === 0 && document.getElementById("searchInput").value.trim() === "") {
         return; 
     }
@@ -208,6 +281,7 @@ function applyFiltersAndSort() {
 
     if (statusFilter !== "all") {
         let today = new Date();
+        today.setHours(0,0,0,0);
         processedData = processedData.filter(i => {
             let buyDate = new Date(i.buy);
             let warrantyDate = add24Months(buyDate);
@@ -226,11 +300,25 @@ function applyFiltersAndSort() {
 }
 
 function saveData(){
+    let name = document.getElementById("name").value.trim();
+    let phone = document.getElementById("phone").value.trim();
+    let order = document.getElementById("order").value.trim();
+    
+    if(!name && !phone && !order) {
+        showToast("Vui lòng điền thông tin trước khi lưu!", "warning");
+        return;
+    }
+
+    let btn = document.getElementById("btnSingleSave");
+    let spinner = document.getElementById("singleSpinner");
+    btn.disabled = true;
+    spinner.classList.add("active");
+
     let dataSend = {
-        name: document.getElementById("name").value,
-        phone: document.getElementById("phone").value,
-        order: document.getElementById("order").value,
-        product: document.getElementById("product").value,
+        name: name,
+        phone: phone,
+        order: order,
+        product: document.getElementById("product").value.trim(),
         buy: document.getElementById("buy").value
     };
 
@@ -240,8 +328,13 @@ function saveData(){
     })
     .then(res => res.text())
     .then(res => {
-        alert("Đã lưu dữ liệu");
-        location.reload();
+        showToast("Đã lưu dữ liệu thành công!", "success");
+        setTimeout(() => location.reload(), 1500);
+    })
+    .catch(err => {
+        showToast("Lỗi khi lưu dữ liệu!", "error");
+        btn.disabled = false;
+        spinner.classList.remove("active");
     });
 }
 
@@ -249,9 +342,11 @@ async function processAndSaveExcel() {
     let rawData = document.getElementById("excelData").value;
     let bulkDate = document.getElementById("bulkBuyDate").value;
     let statusDiv = document.getElementById("bulkStatus");
+    let btn = document.getElementById("btnBulkSave");
+    let spinner = document.getElementById("bulkSpinner");
 
     if (!rawData.trim()) {
-        alert("Vui lòng dán dữ liệu từ file Excel vào ô văn bản!");
+        showToast("Chưa có dữ liệu. Vui lòng dán từ Excel vào!", "warning");
         return;
     }
 
@@ -263,46 +358,57 @@ async function processAndSaveExcel() {
         if (!row) continue; 
 
         let cols = row.split('\t'); 
-        
         let name = cols[0] ? cols[0].trim() : "";
         let phone = cols[1] ? cols[1].trim() : "";
         let order = cols[2] ? cols[2].trim() : "";
         let product = cols[3] ? cols[3].trim() : "";
         
-        if(name !== "" || phone !== "") {
+        if(name !== "" || phone !== "" || order !== "") {
             dataToSave.push({ name, phone, order, product, buy: bulkDate });
         }
     }
 
     if (dataToSave.length === 0) {
-        alert("Không tìm thấy dữ liệu hợp lệ. Hãy chắc chắn bạn đã copy đúng bảng.");
+        showToast("Dữ liệu không hợp lệ. Hãy kiểm tra lại bảng copy.", "error");
         return;
     }
 
-    if (!confirm(`Hệ thống tìm thấy ${dataToSave.length} đơn hàng. Bạn có chắc chắn muốn lưu tất cả lên Google Sheet không?`)) {
+    if (!confirm(`Sẵn sàng lưu ${dataToSave.length} đơn hàng. Bạn xác nhận chứ?`)) {
         return;
     }
 
-    let url = "https://script.google.com/macros/s/AKfycbzTaFrikrAr2J6f1rvJPmB9IDIZhRHnwdwJpaki9YD3hCFENnW1rsXicZPCA1-_3xe9JA/exec";
+    // Khóa nút bấm và hiện loading
+    btn.disabled = true;
+    spinner.classList.add("active");
     
+    let url = "https://script.google.com/macros/s/AKfycbzTaFrikrAr2J6f1rvJPmB9IDIZhRHnwdwJpaki9YD3hCFENnW1rsXicZPCA1-_3xe9JA/exec";
+    let successCount = 0;
+
     for (let i = 0; i < dataToSave.length; i++) {
-        statusDiv.innerText = `⏳ Đang lưu đơn thứ ${i + 1} / ${dataToSave.length}... Vui lòng không tắt trang!`;
+        statusDiv.innerText = `⏳ Đang xử lý: ${i + 1} / ${dataToSave.length} đơn... (Vui lòng không tắt web)`;
         try {
             await fetch(url, {
                 method: "POST",
                 body: JSON.stringify(dataToSave[i])
             });
+            successCount++;
         } catch (error) {
             console.error("Lỗi ở dòng " + (i+1), error);
+            showToast(`Lỗi khi lưu đơn thứ ${i+1}`, "error");
         }
     }
 
-    statusDiv.style.color = "green";
-    statusDiv.innerText = `✅ Đã lưu thành công ${dataToSave.length} đơn hàng! Đang tải lại trang...`;
-    
-    setTimeout(() => {
-        location.reload();
-    }, 1500);
+    if (successCount === dataToSave.length) {
+        statusDiv.style.color = "green";
+        statusDiv.innerText = `✅ Hoàn tất! Đã lưu ${successCount} đơn hàng.`;
+        showToast(`Tuyệt vời! Đã lưu ${successCount} đơn.`, "success");
+        setTimeout(() => location.reload(), 2000);
+    } else {
+        statusDiv.style.color = "red";
+        statusDiv.innerText = `⚠️ Hoàn tất nhưng có lỗi. Đã lưu ${successCount}/${dataToSave.length} đơn.`;
+        btn.disabled = false;
+        spinner.classList.remove("active");
+    }
 }
 </script>
 
