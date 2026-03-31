@@ -28,7 +28,7 @@
     .formRow input { flex: 1; }
     .saveBtn { background: #28a745; width: 100%; margin-top: 10px; font-weight: bold; }
     
-    /* CSS Mới cho phần Paste Excel */
+    /* CSS cho phần Paste Excel */
     .excelBox { background: #fff3cd; border: 1px solid #ffeeba; }
     textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; resize: vertical; box-sizing: border-box; }
     .bulkSaveBtn { background: #ffc107; color: #333; }
@@ -72,7 +72,7 @@
             </tr>
         </thead>
         <tbody id="tableBody">
-            <tr><td colspan="7">Đang tải dữ liệu...</td></tr>
+            <tr><td colspan="7">Nhập thông tin để tra cứu bảo hành</td></tr>
         </tbody>
     </table>
 
@@ -124,8 +124,8 @@ fetch("https://opensheet.elk.sh/1mNui44f4fTX2raO5OlsbDVo9lrDnsYADMpwhq8YSmZY/She
     .then(res => res.json())
     .then(res => { 
         data = res; 
-        currentSearchResults = [...data];
-        applyFiltersAndSort(); // Hiển thị tất cả dữ liệu khi vừa load xong
+        // Khi tải xong data ngầm, không render ra bảng nữa mà giữ nguyên dòng nhắc nhở
+        document.getElementById("tableBody").innerHTML = `<tr><td colspan="7">Nhập thông tin để tra cứu bảo hành</td></tr>`;
     });
 
 function add24Months(date){
@@ -179,19 +179,28 @@ function search(){
     let keyword = document.getElementById("searchInput").value.trim().toLowerCase();
     
     if(!keyword){
-        currentSearchResults = [...data];
-    } else {
-        currentSearchResults = data.filter(i => {
-            let name = (i.name || "").toLowerCase();
-            let phone = (i.phone || "");
-            let order = (i.order || "").toLowerCase();
-            return name.includes(keyword) || phone.includes(keyword) || order.includes(keyword);
-        });
-    }
+        // Nếu không có từ khóa thì dọn sạch kết quả cũ và hiện thông báo
+        document.getElementById("tableBody").innerHTML = `<tr><td colspan="7">Vui lòng nhập thông tin cần tìm</td></tr>`;
+        currentSearchResults = [];
+        return; 
+    } 
+
+    currentSearchResults = data.filter(i => {
+        let name = (i.name || "").toLowerCase();
+        let phone = (i.phone || "");
+        let order = (i.order || "").toLowerCase();
+        return name.includes(keyword) || phone.includes(keyword) || order.includes(keyword);
+    });
+    
     applyFiltersAndSort();
 }
 
 function applyFiltersAndSort() {
+    // Nếu chưa có kết quả tìm kiếm nào (người dùng chưa bấm tìm), thì không làm gì cả
+    if(currentSearchResults.length === 0 && document.getElementById("searchInput").value.trim() === "") {
+        return; 
+    }
+
     let statusFilter = document.getElementById("filterStatus").value;
     let sortOrder = document.getElementById("sortDate").value;
 
@@ -216,7 +225,6 @@ function applyFiltersAndSort() {
     render(processedData);
 }
 
-// Hàm lưu từng dòng (cũ)
 function saveData(){
     let dataSend = {
         name: document.getElementById("name").value,
@@ -237,7 +245,6 @@ function saveData(){
     });
 }
 
-// HÀM MỚI: Xử lý và lưu hàng loạt từ file Excel
 async function processAndSaveExcel() {
     let rawData = document.getElementById("excelData").value;
     let bulkDate = document.getElementById("bulkBuyDate").value;
@@ -248,15 +255,13 @@ async function processAndSaveExcel() {
         return;
     }
 
-    // Tách dòng bằng \n
     let rows = rawData.split('\n');
     let dataToSave = [];
 
     for (let i = 0; i < rows.length; i++) {
         let row = rows[i].trim();
-        if (!row) continue; // Bỏ qua dòng trống
+        if (!row) continue; 
 
-        // Tách cột bằng phím Tab (\t)
         let cols = row.split('\t'); 
         
         let name = cols[0] ? cols[0].trim() : "";
@@ -264,7 +269,6 @@ async function processAndSaveExcel() {
         let order = cols[2] ? cols[2].trim() : "";
         let product = cols[3] ? cols[3].trim() : "";
         
-        // Chỉ lấy những dòng có Tên hoặc SĐT để tránh lấy nhầm rác
         if(name !== "" || phone !== "") {
             dataToSave.push({ name, phone, order, product, buy: bulkDate });
         }
@@ -281,7 +285,6 @@ async function processAndSaveExcel() {
 
     let url = "https://script.google.com/macros/s/AKfycbzTaFrikrAr2J6f1rvJPmB9IDIZhRHnwdwJpaki9YD3hCFENnW1rsXicZPCA1-_3xe9JA/exec";
     
-    // Gửi dữ liệu tuần tự từng dòng một (Để tránh phải sửa đổi code Google Apps Script của bạn)
     for (let i = 0; i < dataToSave.length; i++) {
         statusDiv.innerText = `⏳ Đang lưu đơn thứ ${i + 1} / ${dataToSave.length}... Vui lòng không tắt trang!`;
         try {
