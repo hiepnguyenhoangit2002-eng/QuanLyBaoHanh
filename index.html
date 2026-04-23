@@ -156,7 +156,7 @@ document.getElementById('buy').value = todayStr;
 document.getElementById('bulkBuyDate').value = todayStr;
 
 // Fetch dữ liệu ban đầu
-fetch("https://opensheet.elk.sh/1mNui44f4fTX2raO5OlsbDVo9lrDnsYADMpwhq8YSmZY/Sheet1")
+fetch("https://opensheet.elk.sh/1MQmF94ae7dQi_ElMhOwmUB98ZXsL1tTvttCmuNIT8ck/Sheet1")
     .then(res => res.json())
     .then(res => { 
         data = res; 
@@ -381,7 +381,7 @@ async function processAndSaveExcel() {
     btn.disabled = true;
     spinner.classList.add("active");
     
-    let url = "https://script.google.com/macros/s/AKfycbzTaFrikrAr2J6f1rvJPmB9IDIZhRHnwdwJpaki9YD3hCFENnW1rsXicZPCA1-_3xe9JA/exec";
+    let url = "https://script.google.com/macros/s/AKfycbxLCygrWygmClpTF3b1GiQNCPng6M0ylgtTQ4Wykjdm9YamJgDdcYs4PoZnATTfbM3y/exec";
     let successCount = 0;
 
     for (let i = 0; i < dataToSave.length; i++) {
